@@ -7,7 +7,8 @@
         Калькулятор ожидания дня рождения
     </div>
     <div class="card-body">
-        <form>
+        <form method="post">
+            {% csrf_token %}
             {% comment %} <table>
             {{ form }}
             </table>
