@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from .forms import BirthdayForm
+from .models import Birthday
 from .utils import calculate_birthday_countdown
 
 def birthday(request):
@@ -10,5 +11,11 @@ def birthday(request):
         birthday_countdown = calculate_birthday_countdown(
             form.cleaned_data['birthday']
         )
-        context.update({'birthday_countdown': birthday_countdown})
+        form.save()
+        return redirect('birthday:list')
     return render(request, 'birthday/birthday.html', context=context)
+
+def birthday_list(request):
+    birthdays = Birthday.objects.all()
+    context = {'birthdays': birthdays}
+    return render(request, 'birthday/birthday_list.html', context)
