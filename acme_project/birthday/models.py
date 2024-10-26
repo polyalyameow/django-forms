@@ -1,12 +1,18 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
 from django.urls import reverse
+
+User = get_user_model()
 
 class Birthday(models.Model):
     first_name = models.CharField('Имя', max_length=20)
     last_name = models.CharField('Фамилия', blank=True, help_text='Необязательное поле', max_length=20)
     birthday = models.DateField('Дата рождения')
     image = models.ImageField('Фото', upload_to='birthdays_images', blank=True)
+    author = models.ForeignKey(
+        User, verbose_name='Автор записи', on_delete=models.CASCADE, null=True
+    ) 
 
     class Meta:
         constraints = [
