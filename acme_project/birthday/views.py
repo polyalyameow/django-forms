@@ -4,10 +4,10 @@ from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404, redirect
 
-from .forms import BirthdayForm
-from .models import Birthday
+from .forms import BirthdayForm, CongratulationForm
+from .models import Birthday, Congratulation
 from .utils import calculate_birthday_countdown
 
 class OnlyAuthorMixin(UserPassesTestMixin):
@@ -35,13 +35,17 @@ class BirthdayUpdateView(OnlyAuthorMixin, UpdateView):
     form_class = BirthdayForm
 
 
-class BirthdayDetailView(LoginRequiredMixin, DetailView):
+class BirthdayDetailView(DetailView):
     model = Birthday
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['birthday_countdown'] = calculate_birthday_countdown(
             self.object.birthday
+        )
+        context['form'] = CongratulationForm()
+        context['congratulations'] = (
+            self.object.congratulations.select_related('author')
         )
 
         return context
@@ -60,3 +64,15 @@ class BirthdayDeleteView(OnlyAuthorMixin, DeleteView):
 
 
 
+@login_required
+def add_comment(request, pk):
+    birthday = get_object_or_404(Birthday, pk=pk)
+    form = CongratulationForm(request.POST)
+
+    if form.is_valid():
+        congratulation = form.save(commit=False)
+        congratulation.author = request.user
+        congratulation.birthday = birthday
+        congratulation.save()
+    
+    return redirect('birthday:detail', pk=pk)
