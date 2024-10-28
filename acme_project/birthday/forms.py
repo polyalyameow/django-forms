@@ -2,13 +2,14 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 
-from .models import Birthday, Congratulation
+from .models import Birthday, Congratulation, Tag
 
 from .validators import real_age
 
 BEATLES = {"Джон Леннон", "Пол Маккартни", "Джордж Харрисон", "Ринго Старр"}
 
 class BirthdayForm(forms.ModelForm):
+    
     class Meta:
         model = Birthday
         fields = "__all__"
@@ -21,6 +22,22 @@ class BirthdayForm(forms.ModelForm):
         widget=forms.DateInput(attrs={'type': 'date'}),
         validators=[real_age],
     )
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # Clear existing tags to avoid duplicates
+        instance.tags.clear()  
+
+        # Process tags from the form
+        tags = self.cleaned_data.get('tags', [])
+        for tag in tags:
+            tag_instance, created = Tag.objects.get_or_create(tag=tag)
+            instance.tags.add(tag_instance)
+
+        if commit:
+            instance.save()
+        return instance
 
     def clean_first_name(self):
         first_name = self.cleaned_data['first_name']
